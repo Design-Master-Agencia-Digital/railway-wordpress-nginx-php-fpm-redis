@@ -7,6 +7,7 @@ RUN apk add --no-cache \
     freetype-dev \
     libjpeg-turbo-dev \
     libpng-dev \
+    libwebp-dev \
     libzip-dev \
     unzip \
     wget \
@@ -21,7 +22,7 @@ RUN rm -rf /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/conf.d
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) gd zip opcache
 # Install Redis extension (requires build tools temporarily)
 RUN apk add --no-cache --virtual .build-deps autoconf gcc g++ make \

@@ -47,6 +47,8 @@ RUN sed -i 's/listen = .*/listen = 127.0.0.1:9000/' /usr/local/etc/php-fpm.d/zz-
 
 COPY default.conf.template /etc/nginx/templates/default.conf.template
 COPY wp-config-custom.php /usr/local/share/wp-config-custom.php
+RUN mkdir -p /usr/local/share/mu-plugins
+COPY cloudflare-auto-purge.php /usr/local/share/mu-plugins/cloudflare-auto-purge.php
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint-custom.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint-custom.sh
 

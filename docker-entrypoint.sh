@@ -52,6 +52,11 @@ fi
 # 6. Fix permissions
 chown -R www-data:www-data /var/www/html
 
+# 6.5. Install mu-plugins from image
+echo "Installing mu-plugins..."
+mkdir -p /var/www/html/wp-content/mu-plugins
+cp /usr/local/share/mu-plugins/*.php /var/www/html/wp-content/mu-plugins/ 2>/dev/null || true
+
 # 7. Start Nginx (background, but not daemon mode for proper signal handling)
 echo "Starting Nginx..."
 nginx -g "daemon off;" &

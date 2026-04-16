@@ -24,6 +24,9 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) gd zip opcache
+
+# Hide PHP version (security)
+RUN echo "expose_php = Off" > /usr/local/etc/php/conf.d/security.ini
 # Install Redis extension (requires build tools temporarily)
 RUN apk add --no-cache --virtual .build-deps autoconf gcc g++ make \
     && pecl install redis \

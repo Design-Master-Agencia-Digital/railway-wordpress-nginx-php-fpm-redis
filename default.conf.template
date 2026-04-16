@@ -11,6 +11,9 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
 
+    # Hide PHP version
+    fastcgi_hide_header X-Powered-By;
+
     # Gzip compression
     gzip on;
     gzip_vary on;
@@ -22,7 +25,7 @@ server {
         try_files $uri $uri/ /index.php?$args;
     }
 
-    # PHP handling
+    # PHP handling — public pages get CDN cache headers
     location ~ \.php$ {
         try_files $uri =404;
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
@@ -31,6 +34,65 @@ server {
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         fastcgi_param PATH_INFO $fastcgi_path_info;
+
+        # Hide WP cache-control for non-dynamic pages; Cloudflare uses s-maxage
+        fastcgi_hide_header Cache-Control;
+
+        # Default: cache on CDN for 2h, browser always revalidates
+        add_header Cache-Control "public, s-maxage=7200, max-age=0, must-revalidate";
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
+    # WooCommerce dynamic pages — NEVER cache
+    location ~ ^/(carrinho|finalizar-compra|minha-conta|cart|checkout|my-account)(/|$) {
+        try_files $uri $uri/ /index.php?$args;
+
+        location ~ \.php$ {
+            try_files $uri =404;
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+            fastcgi_hide_header Cache-Control;
+
+            add_header Cache-Control "no-store, no-cache, must-revalidate, private";
+            add_header X-Frame-Options "SAMEORIGIN" always;
+            add_header X-Content-Type-Options "nosniff" always;
+        }
+    }
+
+    # wp-admin — NEVER cache
+    location /wp-admin {
+        try_files $uri $uri/ /index.php?$args;
+
+        location ~ \.php$ {
+            try_files $uri =404;
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+
+            add_header Cache-Control "no-store, no-cache, private";
+            add_header X-Frame-Options "SAMEORIGIN" always;
+            add_header X-Content-Type-Options "nosniff" always;
+        }
+    }
+
+    # wp-login — NEVER cache
+    location = /wp-login.php {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+
+        add_header Cache-Control "no-store, no-cache, private";
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
     }
 
     # Block XML-RPC (common attack vector)
